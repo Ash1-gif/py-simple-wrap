@@ -504,6 +504,20 @@ class TestRunDelete:
             )
 
 
+    def test_run_delete_commits_before_closing(self, tmp_path):
+        """A deletion must persist when close_conn_after=True."""
+        db_path = tmp_path / "run_delete_commit.db"
+        conn, cursor = open_db(str(db_path))
+        cursor.execute("CREATE TABLE items (id INTEGER)")
+        cursor.execute("INSERT INTO items (id) VALUES (1)")
+        conn.commit()
+
+        run_delete(conn, cursor, "items", "id = ?", (1,), close_conn_after=True)
+
+        with sqlite3.connect(db_path) as reopened:
+            rows = reopened.execute("SELECT id FROM items").fetchall()
+        assert rows == []
+
 class TestDeleteAllFromTable:
     """Tests for delete_all_from_table function."""
 
@@ -559,6 +573,20 @@ class TestDeleteAllFromTable:
                 self.conn, self.cursor, "users UNION SELECT * FROM sqlite_master"
             )
 
+
+    def test_delete_all_commits_before_closing(self, tmp_path):
+        """Deleting all rows must persist after the connection closes."""
+        db_path = tmp_path / "delete_all_commit.db"
+        conn, cursor = open_db(str(db_path))
+        cursor.execute("CREATE TABLE items (id INTEGER)")
+        cursor.executemany("INSERT INTO items (id) VALUES (?)", [(1,), (2,)])
+        conn.commit()
+
+        delete_all_from_table(conn, cursor, "items", close_conn_after=True)
+
+        with sqlite3.connect(db_path) as reopened:
+            rows = reopened.execute("SELECT id FROM items").fetchall()
+        assert rows == []
 
 class TestCheckIfValid:
     """Tests for the internal _check_if_valid helper function."""
