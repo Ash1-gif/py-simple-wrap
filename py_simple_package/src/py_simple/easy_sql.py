@@ -389,6 +389,7 @@ def run_delete(
     if _check_if_valid(table_name):
         try:
             cursor.execute(f"DELETE FROM {table_name} WHERE {condition}", params)
+            connection.commit()
             if close_conn_after:
                 connection.close()
         except (
@@ -453,6 +454,7 @@ def delete_all_from_table(
     if _check_if_valid(table_name):
         try:
             cursor.execute(f"DELETE FROM {table_name}")
+            connection.commit()
             if close_conn_after:
                 connection.close()
         except (
